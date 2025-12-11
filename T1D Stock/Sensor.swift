@@ -5,7 +5,6 @@
 //  Created by Eissa Ahmad on 2025-12-11.
 //
 
-
 import Foundation
 
 struct Sensor: Identifiable, Codable {
@@ -28,7 +27,6 @@ struct Sensor: Identifiable, Codable {
 
 enum SensorStatus: String, Codable, CaseIterable {
     case available = "Available"
-    case used = "Used"
-    case broken = "Broken"
-    case lost = "Lost"
+    case lost = "Lost/Stolen"
+    case broken = "Broken/Defective"
 }

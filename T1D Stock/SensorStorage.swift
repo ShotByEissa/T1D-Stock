@@ -10,6 +10,14 @@ class SensorStorage: ObservableObject {
         loadSensors()
     }
     
+    var availableSensors: [Sensor] {
+        sensors.filter { $0.status == .available }
+    }
+    
+    var notifySensors: [Sensor] {
+        sensors.filter { $0.status == .lost || $0.status == .broken }
+    }
+    
     func addSensor(productID: String, serialNumber: String, expiryDate: Date) -> Bool {
         // Check if serial number already exists
         if sensors.contains(where: { $0.serialNumber == serialNumber }) {
@@ -24,6 +32,18 @@ class SensorStorage: ObservableObject {
         sensors.append(sensor)
         saveSensors()
         return true // Successfully added
+    }
+    
+    func markAsUsed(_ sensor: Sensor) {
+        sensors.removeAll { $0.id == sensor.id }
+        saveSensors()
+    }
+    
+    func updateStatus(_ sensor: Sensor, to status: SensorStatus) {
+        if let index = sensors.firstIndex(where: { $0.id == sensor.id }) {
+            sensors[index].status = status
+            saveSensors()
+        }
     }
     
     private func saveSensors() {
