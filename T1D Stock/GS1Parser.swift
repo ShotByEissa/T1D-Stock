@@ -1,15 +1,10 @@
-//
-//  GS1Parser.swift
-//  T1D Stock
-//
-//  Created by Eissa Ahmad on 2025-12-11.
-//
-
-
 import Foundation
 
 struct GS1Parser {
     static func parse(_ rawCode: String) -> ParsedGS1Data? {
+        // Validate minimum length
+        guard rawCode.count >= 4 else { return nil }
+        
         var productID: String?
         var expiryDate: Date?
         var serialNumber: String?
@@ -19,11 +14,11 @@ struct GS1Parser {
         
         while index < rawCode.endIndex {
             // Need at least 2 characters for AI
-            guard rawCode.distance(from: index, to: rawCode.endIndex) >= 2 else { break }
+            let remaining = rawCode.distance(from: index, to: rawCode.endIndex)
+            guard remaining >= 2 else { break }
             
-            let aiStart = index
             let aiEnd = rawCode.index(index, offsetBy: 2)
-            let ai = String(rawCode[aiStart..<aiEnd])
+            let ai = String(rawCode[index..<aiEnd])
             
             index = aiEnd
             
@@ -47,21 +42,26 @@ struct GS1Parser {
                 index = endIndex
                 
             case "10": // Lot number (variable length)
-                let nextAI = findNextAI(in: rawCode, from: index)
-                let endIndex = nextAI ?? rawCode.endIndex
-                lotNumber = String(rawCode[index..<endIndex])
-                index = endIndex
+                if let nextAI = findNextAI(in: rawCode, from: index) {
+                    lotNumber = String(rawCode[index..<nextAI])
+                    index = nextAI
+                } else {
+                    lotNumber = String(rawCode[index...])
+                    index = rawCode.endIndex
+                }
                 
             case "21": // Serial number (variable length)
-                let nextAI = findNextAI(in: rawCode, from: index)
-                let endIndex = nextAI ?? rawCode.endIndex
-                serialNumber = String(rawCode[index..<endIndex])
-                index = endIndex
+                if let nextAI = findNextAI(in: rawCode, from: index) {
+                    serialNumber = String(rawCode[index..<nextAI])
+                    index = nextAI
+                } else {
+                    serialNumber = String(rawCode[index...])
+                    index = rawCode.endIndex
+                }
                 
             default:
                 // Unknown AI, try to skip it
-                let nextAI = findNextAI(in: rawCode, from: index)
-                if let nextAI = nextAI {
+                if let nextAI = findNextAI(in: rawCode, from: index) {
                     index = nextAI
                 } else {
                     break
@@ -86,17 +86,22 @@ struct GS1Parser {
     private static func findNextAI(in string: String, from index: String.Index) -> String.Index? {
         let knownAIs = ["01", "11", "17", "10", "21", "24", "30"]
         
+        guard index < string.endIndex else { return nil }
+        
         var searchIndex = string.index(after: index)
         
         while searchIndex < string.endIndex {
-            guard string.distance(from: searchIndex, to: string.endIndex) >= 2 else { break }
+            let remaining = string.distance(from: searchIndex, to: string.endIndex)
+            guard remaining >= 2 else { break }
             
-            let nextTwoChars = String(string[searchIndex..<string.index(searchIndex, offsetBy: 2)])
+            let checkEnd = string.index(searchIndex, offsetBy: 2)
+            let nextTwoChars = String(string[searchIndex..<checkEnd])
             
             if knownAIs.contains(nextTwoChars) {
                 return searchIndex
             }
             
+            guard searchIndex < string.endIndex else { break }
             searchIndex = string.index(after: searchIndex)
         }
         

@@ -38,12 +38,9 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
     var previewLayer: AVCaptureVideoPreviewLayer!
     weak var delegate: ScannerDelegate?
     
-    let scanAreaSize: CGFloat = 280
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCamera()
-        addScannerOverlay()
     }
     
     func setupCamera() {
@@ -81,43 +78,6 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
         
         DispatchQueue.global(qos: .userInitiated).async {
             self.captureSession.startRunning()
-        }
-    }
-    
-    func addScannerOverlay() {
-        let overlayView = UIView(frame: view.bounds)
-        overlayView.backgroundColor = UIColor.black.withAlphaComponent(0.5)
-        
-        let scanArea = CGRect(
-            x: (view.bounds.width - scanAreaSize) / 2,
-            y: (view.bounds.height - scanAreaSize) / 2,
-            width: scanAreaSize,
-            height: scanAreaSize
-        )
-        
-        let maskLayer = CAShapeLayer()
-        let path = UIBezierPath(rect: overlayView.bounds)
-        let scanPath = UIBezierPath(roundedRect: scanArea, cornerRadius: 20)
-        path.append(scanPath)
-        maskLayer.fillRule = .evenOdd
-        maskLayer.path = path.cgPath
-        overlayView.layer.mask = maskLayer
-        
-        let borderLayer = CAShapeLayer()
-        borderLayer.path = UIBezierPath(roundedRect: scanArea, cornerRadius: 20).cgPath
-        borderLayer.strokeColor = UIColor.white.cgColor
-        borderLayer.fillColor = UIColor.clear.cgColor
-        borderLayer.lineWidth = 4
-        overlayView.layer.addSublayer(borderLayer)
-        
-        view.addSubview(overlayView)
-        
-        // Restrict scanning to the square region
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            let rectOfInterest = self.previewLayer.metadataOutputRectConverted(fromLayerRect: scanArea)
-            if let metadataOutput = self.captureSession.outputs.first as? AVCaptureMetadataOutput {
-                metadataOutput.rectOfInterest = rectOfInterest
-            }
         }
     }
     
