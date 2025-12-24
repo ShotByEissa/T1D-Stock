@@ -50,14 +50,11 @@ struct GS1Parser {
                     index = rawCode.endIndex
                 }
                 
-            case "21": // Serial number (variable length)
-                if let nextAI = findNextAI(in: rawCode, from: index) {
-                    serialNumber = String(rawCode[index..<nextAI])
-                    index = nextAI
-                } else {
-                    serialNumber = String(rawCode[index...])
-                    index = rawCode.endIndex
-                }
+            case "21": // Serial number (12 digits fixed for Dexcom)
+                guard rawCode.distance(from: index, to: rawCode.endIndex) >= 12 else { break }
+                let endIndex = rawCode.index(index, offsetBy: 12)
+                serialNumber = String(rawCode[index..<endIndex])
+                index = endIndex
                 
             default:
                 // Unknown AI, try to skip it
